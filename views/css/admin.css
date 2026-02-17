@@ -129,6 +129,7 @@
 
 .cf-assigned-products {
     padding: 15px;
+    clear: both;
 }
 
 .cf-assigned-product {
@@ -222,4 +223,34 @@
     opacity: 0;
     transform: translateX(20px);
     transition: all 0.3s ease;
+}
+
+.cf-category-section {
+    padding: 15px;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+    background: #fcfcfc;
+    overflow: hidden;
+}
+
+.cf-category-section .form-group {
+    margin-bottom: 0;
+    overflow: hidden;
+}
+
+.cf-category-section::after,
+.cf-search-section::after {
+    content: "";
+    display: table;
+    clear: both;
+}
+
+
+.cf-results-header>div {
+    display: flex;
+    gap: 8px;
+}
+
+.cf-results-list {
+    max-height: 400px;
 }

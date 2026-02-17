@@ -43,7 +43,7 @@
                     flagEl.classList.add('cf-positioned');
                 }
 
-                var natives = miniature.querySelectorAll('ul.product-flags, ul.js-product-flags');
+                var natives = miniature.querySelectorAll('ul.product-flags, ul.js-product-flags, .product-flag, .discount-product');
                 for (var i = 0; i < natives.length; i++) {
                     natives[i].style.display = 'none';
                 }
@@ -56,7 +56,7 @@
                 cover.appendChild(flagEl);
                 flagEl.classList.add('cf-positioned');
             }
-            var natives = document.querySelectorAll('ul.product-flags.js-product-flags');
+            var natives = document.querySelectorAll('ul.product-flags, ul.js-product-flags, .page-content > .product-flags, .product-flag:not(.custom-flag)');
             for (var i = 0; i < natives.length; i++) {
                 natives[i].style.display = 'none';
             }

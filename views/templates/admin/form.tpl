@@ -195,11 +195,42 @@
         <div id="cf-search-results" class="cf-search-results" style="display:none;">
             <div class="cf-results-header">
                 <span id="cf-results-count"></span>
-                <button type="button" class="btn btn-success btn-sm" id="cf-assign-selected" disabled>
-                    <i class="icon-plus"></i> {l s='Assign Selected' mod='customflags'} (<span id="cf-selected-count">0</span>)
-                </button>
+                <div>
+                    <button type="button" class="btn btn-default btn-sm" id="cf-select-all">
+                        <i class="icon-check-square-o"></i> {l s='Select All' mod='customflags'}
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm" id="cf-assign-selected" disabled>
+                        <i class="icon-plus"></i> {l s='Assign Selected' mod='customflags'} (<span id="cf-selected-count">0</span>)
+                    </button>
+                </div>
             </div>
             <div id="cf-results-list" class="cf-results-list"></div>
+        </div>
+    </div>
+
+    <div class="cf-category-section">
+        <div class="form-group">
+            <label class="control-label col-lg-3">
+                <i class="icon-folder-open"></i> {l s='Assign by Category' mod='customflags'}
+            </label>
+            <div class="col-lg-6">
+                <div class="input-group">
+                    <select id="cf-category-select" class="form-control">
+                        <option value="">{l s='-- Select category --' mod='customflags'}</option>
+                        {foreach from=$categories item=cat}
+                            <option value="{$cat.id_category|intval}">
+                                {$cat.name|escape:'htmlall':'UTF-8'}
+                            </option>
+                        {/foreach}
+                    </select>
+                    <span class="input-group-btn">
+                        <button type="button" class="btn btn-info" id="cf-assign-category" disabled>
+                            <i class="icon-plus"></i> {l s='Assign Category' mod='customflags'}
+                        </button>
+                    </span>
+                </div>
+                <p class="help-block">{l s='Assign this flag to all products in the selected category.' mod='customflags'}</p>
+            </div>
         </div>
     </div>
 
@@ -432,6 +463,65 @@
                 $selectedCount = $('#cf-selected-count');
                 selectedProducts = {};
                 updateSelectedCount();
+            }
+        });
+    });
+
+    var $selectAll = $('#cf-select-all');
+    var allSelected = false;
+
+    $selectAll.on('click', function() {
+        allSelected = !allSelected;
+        $resultsList.find('.cf-result-checkbox').each(function() {
+            $(this).prop('checked', allSelected).trigger('change');
+        });
+        $(this).html(allSelected
+            ? '<i class="icon-square-o"></i> {l s="Deselect All" mod="customflags" js=1}'
+            : '<i class="icon-check-square-o"></i> {l s="Select All" mod="customflags" js=1}'
+        );
+    });
+
+    var $categorySelect = $('#cf-category-select');
+    var $categoryBtn = $('#cf-assign-category');
+
+    $categorySelect.on('change', function() {
+        $categoryBtn.prop('disabled', !$(this).val());
+    });
+
+    $categoryBtn.on('click', function() {
+        var idCategory = parseInt($categorySelect.val());
+        if (!idCategory) return;
+
+        var catName = $categorySelect.find('option:selected').text().trim();
+        if (!confirm('{l s="Assign this flag to ALL products in category" mod="customflags" js=1} "' + catName + '"?')) return;
+
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<i class="icon-spin icon-spinner"></i> {l s="Assigning..." mod="customflags" js=1}');
+
+        $.ajax({
+            url: ajaxUrl,
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                ajax: 1,
+                action: 'assignCategory',
+                id_custom_flag: idFlag,
+                id_category: idCategory
+            },
+            success: function(response) {
+                if (response.success) {
+                    showNotification(response.added + ' {l s="products assigned from category!" mod="customflags" js=1}', 'success');
+                    refreshAssigned(response.assigned_products);
+                } else {
+                    showNotification(response.error || texts.error, 'error');
+                }
+            },
+            error: function() {
+                showNotification(texts.error, 'error');
+            },
+            complete: function() {
+                $btn.html('<i class="icon-plus"></i> {l s="Assign Category" mod="customflags" js=1}');
+                $categorySelect.val('').trigger('change');
             }
         });
     });

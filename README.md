@@ -2,14 +2,14 @@
 
 Add custom flags and labels to your products. Display badges like **Bestseller**, **Eco**, **Limited Edition**, directly on product images - both on product listings and product detail pages.
 
-<img width="1655" height="753" alt="showcase" src="https://github.com/user-attachments/assets/589d70ad-bd70-47af-8164-5635d8c752b7" />
-
 ## Features
 
 - Create unlimited custom flags with configurable name, background color, and text color
 - Live preview of the flag while editing in the admin panel
-- Assign flags to products via AJAX-powered search (search by name or reference)
-- Multi-select product assignment - assign multiple products at once
+- AND-based search - typing "victoria build" finds products containing both words
+- Assign flags to products via AJAX-powered search (search by name or reference, up to 500 results)
+- Multi-select product assignment with Select All/Deselect All button
+- Assign flags to all products in a category at once
 - Flags are displayed as overlays on product images (centered at the top)
 - When a product has a custom flag, native PrestaShop flags (e.g. "On Sale!") are automatically hidden
 - Fully responsive - flags adapt to mobile screens
@@ -41,10 +41,16 @@ Add custom flags and labels to your products. Display badges like **Bestseller**
 ### Assigning Products
 
 1. Open an existing flag (edit mode)
-2. Use the search bar to find products by name or reference
-3. Select one or more products from the results
+2. Use the search bar to find products by name or reference (supports multi-word AND search)
+3. Click **Select All** or manually check products from the results
 4. Click **Assign Selected**
 5. To remove a product, click the trash icon next to it
+
+### Assigning by Category
+
+1. Open an existing flag (edit mode)
+2. Select a category from the **Assign by Category** dropdown
+3. Click **Assign Category** to add all products from that category
 
 ## File Structure
 
@@ -100,4 +106,3 @@ MIT
 ## Author
 
 [Astrodesign.pl](https://astrodesign.pl) - [github.com/kn00pers](https://github.com/kn00pers)
-

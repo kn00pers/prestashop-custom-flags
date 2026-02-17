@@ -109,6 +109,10 @@ class AdminCustomFlagsController extends ModuleAdminController
             }
         }
 
+        $categories = Category::getSimpleCategories(
+            (int) $this->context->language->id
+        );
+
         $this->context->smarty->assign([
             'flag' => $flag,
             'assigned_products' => $assignedProducts ?: [],
@@ -116,6 +120,7 @@ class AdminCustomFlagsController extends ModuleAdminController
             'ajax_url' => $this->context->link->getAdminLink('AdminCustomFlags'),
             'list_url' => $this->context->link->getAdminLink('AdminCustomFlags'),
             'admin_token' => Tools::getAdminTokenLite('AdminCustomFlags'),
+            'categories' => $categories ?: [],
         ]);
 
         $this->context->smarty->assign('content', $this->context->smarty->fetch(
@@ -221,10 +226,20 @@ class AdminCustomFlagsController extends ModuleAdminController
 
     public function ajaxProcessSearchProducts()
     {
-        $query = pSQL(Tools::getValue('q', ''));
+        $queryRaw = Tools::getValue('q', '');
         $idFlag = (int) Tools::getValue('id_custom_flag', 0);
 
-        if (Tools::strlen($query) < 2) {
+        if (Tools::strlen(trim($queryRaw)) < 2) {
+            $this->ajaxDie(json_encode(['products' => []]));
+            return;
+        }
+
+        $words = preg_split('/\s+/', trim($queryRaw));
+        $words = array_filter($words, function ($w) {
+            return Tools::strlen($w) >= 1;
+        });
+
+        if (empty($words)) {
             $this->ajaxDie(json_encode(['products' => []]));
             return;
         }
@@ -257,10 +272,16 @@ class AdminCustomFlagsController extends ModuleAdminController
             $sql .= ' WHERE ';
         }
 
-        $sql .= '(pl.`name` LIKE \'%' . $query . '%\' OR p.`reference` LIKE \'%' . $query . '%\')
-                 GROUP BY p.`id_product`
+        $andConditions = [];
+        foreach ($words as $word) {
+            $w = pSQL($word);
+            $andConditions[] = '(pl.`name` LIKE \'%' . $w . '%\' OR p.`reference` LIKE \'%' . $w . '%\')';
+        }
+        $sql .= implode(' AND ', $andConditions);
+
+        $sql .= ' GROUP BY p.`id_product`
                  ORDER BY pl.`name` ASC
-                 LIMIT 30';
+                 LIMIT 500';
 
         $products = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS($sql);
 
@@ -346,6 +367,53 @@ class AdminCustomFlagsController extends ModuleAdminController
 
         header('Content-Type: application/json');
         $this->ajaxDie(json_encode(['success' => true]));
+    }
+
+    public function ajaxProcessAssignCategory()
+    {
+        $idFlag = (int) Tools::getValue('id_custom_flag', 0);
+        $idCategory = (int) Tools::getValue('id_category', 0);
+
+        if ($idFlag <= 0 || $idCategory <= 0) {
+            header('Content-Type: application/json');
+            $this->ajaxDie(json_encode(['success' => false, 'error' => 'Invalid parameters']));
+            return;
+        }
+
+        $idShop = (int) $this->context->shop->id;
+
+        $productIds = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS(
+            'SELECT cp.`id_product`
+             FROM `' . _DB_PREFIX_ . 'category_product` cp
+             INNER JOIN `' . _DB_PREFIX_ . 'product_shop` ps
+                ON ps.`id_product` = cp.`id_product`
+                AND ps.`id_shop` = ' . $idShop . '
+             LEFT JOIN `' . _DB_PREFIX_ . 'custom_flag_product` cfp
+                ON cfp.`id_product` = cp.`id_product`
+                AND cfp.`id_custom_flag` = ' . $idFlag . '
+             WHERE cp.`id_category` = ' . $idCategory . '
+                AND cfp.`id_product` IS NULL'
+        );
+
+        $added = 0;
+        if ($productIds) {
+            foreach ($productIds as $row) {
+                Db::getInstance()->insert('custom_flag_product', [
+                    'id_custom_flag' => $idFlag,
+                    'id_product' => (int) $row['id_product'],
+                ]);
+                $added++;
+            }
+        }
+
+        $assignedProducts = $this->getAssignedProductsData($idFlag);
+
+        header('Content-Type: application/json');
+        $this->ajaxDie(json_encode([
+            'success' => true,
+            'added' => $added,
+            'assigned_products' => $assignedProducts,
+        ]));
     }
 
     private function getAssignedProductsData($idFlag)
