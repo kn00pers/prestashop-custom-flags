@@ -2,6 +2,11 @@
 
 Add custom flags and labels to your products. Display badges like **Bestseller**, **Eco**, **Limited Edition**, directly on product images - both on product listings and product detail pages.
 
+<img width="1600" height="375" alt="custom-flags-1" src="https://github.com/user-attachments/assets/790ed6f7-3b14-4d38-a093-b531ef2d2f7a" />
+
+<img width="1600" height="775" alt="custom-flags-2" src="https://github.com/user-attachments/assets/25e06bc0-e511-4e19-aa6c-0f373cd40c56" />
+
+
 ## Features
 
 - Create unlimited custom flags with configurable name, background color, and text color
@@ -106,3 +111,4 @@ MIT
 ## Author
 
 [Astrodesign.pl](https://astrodesign.pl) - [github.com/kn00pers](https://github.com/kn00pers)
+
