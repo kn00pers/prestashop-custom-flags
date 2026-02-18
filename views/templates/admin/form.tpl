@@ -208,7 +208,7 @@
         </div>
     </div>
 
-    <div class="cf-category-section">
+    <div class="cf-category-section form-horizontal">
         <div class="form-group">
             <label class="control-label col-lg-3">
                 <i class="icon-folder-open"></i> {l s='Assign by Category' mod='customflags'}
@@ -234,6 +234,8 @@
         </div>
     </div>
 
+
+    <div class="clearfix"></div>
 
     <div id="cf-assigned-products" class="cf-assigned-products">
         {if $assigned_products|count > 0}
