@@ -72,9 +72,6 @@ customflags/
 │   │   ├── admin.css                        # Admin panel styles
 │   │   ├── front.css                        # Front-office styles
 │   │   └── index.php
-│   ├── js/
-│   │   ├── admin.js                         # Admin panel JavaScript
-│   │   └── index.php
 │   └── templates/
 │       ├── admin/
 │       │   ├── form.tpl                     # Flag create/edit form
@@ -111,4 +108,5 @@ MIT
 ## Author
 
 [Astrodesign.pl](https://astrodesign.pl) - [github.com/kn00pers](https://github.com/kn00pers)
+
 
