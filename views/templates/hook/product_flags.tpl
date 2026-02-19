@@ -1,3 +1,18 @@
+{**
+ * Custom Flags module for PrestaShop 8+
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the MIT License
+ * that is bundled with this package in the file LICENSE.md.
+ * It is also available through the world-wide-web at this URL:
+ * https://opensource.org/licenses/MIT
+ *
+ * @author    Astrodesign.pl - github.com/kn00pers
+ * @copyright Since 2026 Astrodesign.pl
+ * @license   https://opensource.org/licenses/MIT MIT License
+ *}
+
 {if $custom_flags && $custom_flags|count > 0}
     <div class="custom-flags custom-flags-{$custom_flags_position|escape:'htmlall':'UTF-8'}"
          data-flags-position="{$custom_flags_position|escape:'htmlall':'UTF-8'}"

@@ -1,8 +1,18 @@
 <?php
-//Astrodesign.pl - github.com/kn00pers
-//2026
-//Do whatever you want with this module - just don't sell it
-
+/**
+ * Custom Flags module for PrestaShop 8+
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the MIT License
+ * that is bundled with this package in the file LICENSE.md.
+ * It is also available through the world-wide-web at this URL:
+ * https://opensource.org/licenses/MIT
+ *
+ * @author    Astrodesign.pl - github.com/kn00pers
+ * @copyright Since 2026 Astrodesign.pl
+ * @license   https://opensource.org/licenses/MIT MIT License
+ */
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -13,7 +23,7 @@ class CustomFlags extends Module
     {
         $this->name = 'customflags';
         $this->tab = 'front_office_features';
-        $this->version = '1.2.0';
+        $this->version = '1.2.1';
         $this->author = 'Astrodesign.pl';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = ['min' => '8.0.0', 'max' => _PS_VERSION_];
@@ -85,12 +95,9 @@ class CustomFlags extends Module
     private function migrateToLang()
     {
         $db = Db::getInstance();
-
-
         $columns = $db->executeS('SHOW COLUMNS FROM `' . _DB_PREFIX_ . 'custom_flag` LIKE \'name\'');
 
         if (!empty($columns)) {
-
             $flags = $db->executeS('SELECT `id_custom_flag`, `name` FROM `' . _DB_PREFIX_ . 'custom_flag`');
 
             if ($flags) {
@@ -114,7 +121,6 @@ class CustomFlags extends Module
                     }
                 }
             }
-
 
             $db->execute('ALTER TABLE `' . _DB_PREFIX_ . 'custom_flag` DROP COLUMN `name`');
         }
@@ -141,7 +147,7 @@ class CustomFlags extends Module
     private function installTab()
     {
         $tab = new Tab();
-        $tab->active = 1;
+        $tab->active = true;
         $tab->class_name = 'AdminCustomFlags';
         $tab->route_name = '';
         $tab->name = [];
@@ -150,7 +156,9 @@ class CustomFlags extends Module
             $tab->name[$lang['id_lang']] = 'Custom Flags';
         }
 
-        $tab->id_parent = (int) Tab::getIdFromClassName('AdminCatalog');
+        $tab->id_parent = (int) Db::getInstance()->getValue(
+            'SELECT `id_tab` FROM `' . _DB_PREFIX_ . 'tab` WHERE `class_name` = \'AdminCatalog\''
+        );
         $tab->module = $this->name;
 
         return $tab->add();
@@ -158,18 +166,22 @@ class CustomFlags extends Module
 
     private function uninstallTab()
     {
-        $idTab = (int) Tab::getIdFromClassName('AdminCustomFlags');
+        $idTab = (int) Db::getInstance()->getValue(
+            'SELECT `id_tab` FROM `' . _DB_PREFIX_ . 'tab` WHERE `class_name` = \'AdminCustomFlags\''
+        );
+
         if ($idTab) {
             $tab = new Tab($idTab);
+
             return $tab->delete();
         }
 
         return true;
     }
 
-    public static function getFlagsByProduct($idProduct)
+    public function getFlagsByProduct($idProduct)
     {
-        $idLang = (int) Context::getContext()->language->id;
+        $idLang = (int) $this->context->language->id;
 
         $sql = 'SELECT cf.*, cfl.`name`
                 FROM `' . _DB_PREFIX_ . 'custom_flag` cf
@@ -192,7 +204,7 @@ class CustomFlags extends Module
         }
 
         $idProduct = (int) $params['product']['id_product'];
-        $flags = self::getFlagsByProduct($idProduct);
+        $flags = $this->getFlagsByProduct($idProduct);
 
         if (empty($flags)) {
             return '';
@@ -219,7 +231,7 @@ class CustomFlags extends Module
             $idProduct = (int) $params['product']['id_product'];
         }
 
-        $flags = self::getFlagsByProduct($idProduct);
+        $flags = $this->getFlagsByProduct($idProduct);
 
         if (empty($flags)) {
             return '';

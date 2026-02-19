@@ -1,5 +1,18 @@
 <?php
-
+/**
+ * Custom Flags module for PrestaShop 8+
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the MIT License
+ * that is bundled with this package in the file LICENSE.md.
+ * It is also available through the world-wide-web at this URL:
+ * https://opensource.org/licenses/MIT
+ *
+ * @author    Astrodesign.pl - github.com/kn00pers
+ * @copyright Since 2026 Astrodesign.pl
+ * @license   https://opensource.org/licenses/MIT MIT License
+ */
 if (!defined('_PS_VERSION_')) {
     exit;
 }
@@ -19,7 +32,7 @@ class AdminCustomFlagsController extends ModuleAdminController
 
         parent::__construct();
 
-        $this->meta_title = $this->l('Custom Flags');
+        $this->meta_title = $this->trans('Custom Flags', [], 'Modules.Customflags.Admin');
     }
 
     public function setMedia($isNewTheme = false)
@@ -183,7 +196,8 @@ class AdminCustomFlagsController extends ModuleAdminController
 
         $defaultName = trim(Tools::getValue('flag_name_' . $defaultLang, ''));
         if (empty($defaultName)) {
-            $this->errors[] = $this->l('Flag name is required for the default language.');
+            $this->errors[] = $this->trans('Flag name is required for the default language.', [], 'Modules.Customflags.Admin');
+
             return;
         }
 
@@ -200,7 +214,7 @@ class AdminCustomFlagsController extends ModuleAdminController
 
             if ($result) {
                 $this->saveFlagLangs($idFlag, $languages, $defaultName);
-                $this->confirmations[] = $this->l('Flag updated successfully.');
+                $this->confirmations[] = $this->trans('Flag updated successfully.', [], 'Modules.Customflags.Admin');
                 Tools::redirectAdmin($this->context->link->getAdminLink('AdminCustomFlags') . '&action=editFlag&id_custom_flag=' . $idFlag . '&conf=4');
             }
         } else {
@@ -216,7 +230,7 @@ class AdminCustomFlagsController extends ModuleAdminController
             if ($result) {
                 $newId = (int) Db::getInstance()->Insert_ID();
                 $this->saveFlagLangs($newId, $languages, $defaultName);
-                $this->confirmations[] = $this->l('Flag created successfully.');
+                $this->confirmations[] = $this->trans('Flag created successfully.', [], 'Modules.Customflags.Admin');
                 Tools::redirectAdmin($this->context->link->getAdminLink('AdminCustomFlags') . '&action=editFlag&id_custom_flag=' . $newId . '&conf=3');
             }
         }
@@ -225,8 +239,6 @@ class AdminCustomFlagsController extends ModuleAdminController
     private function saveFlagLangs($idFlag, $languages, $defaultName)
     {
         $db = Db::getInstance();
-
-
         $db->delete('custom_flag_lang', 'id_custom_flag = ' . (int) $idFlag);
 
         foreach ($languages as $lang) {
@@ -251,7 +263,7 @@ class AdminCustomFlagsController extends ModuleAdminController
             Db::getInstance()->delete('custom_flag_product', 'id_custom_flag = ' . $idFlag);
             Db::getInstance()->delete('custom_flag_lang', 'id_custom_flag = ' . $idFlag);
             Db::getInstance()->delete('custom_flag', 'id_custom_flag = ' . $idFlag);
-            $this->confirmations[] = $this->l('Flag deleted successfully.');
+            $this->confirmations[] = $this->trans('Flag deleted successfully.', [], 'Modules.Customflags.Admin');
             Tools::redirectAdmin($this->context->link->getAdminLink('AdminCustomFlags') . '&conf=1');
         }
     }
@@ -280,8 +292,8 @@ class AdminCustomFlagsController extends ModuleAdminController
         $idFlag = (int) Tools::getValue('id_custom_flag', 0);
 
         if (Tools::strlen(trim($queryRaw)) < 2) {
-            $this->ajaxDie(json_encode(['products' => []]));
-            return;
+            header('Content-Type: application/json');
+            exit(json_encode(['products' => []]));
         }
 
         $words = preg_split('/\s+/', trim($queryRaw));
@@ -290,8 +302,8 @@ class AdminCustomFlagsController extends ModuleAdminController
         });
 
         if (empty($words)) {
-            $this->ajaxDie(json_encode(['products' => []]));
-            return;
+            header('Content-Type: application/json');
+            exit(json_encode(['products' => []]));
         }
 
         $idLang = (int) $this->context->language->id;
@@ -350,7 +362,7 @@ class AdminCustomFlagsController extends ModuleAdminController
         }
 
         header('Content-Type: application/json');
-        $this->ajaxDie(json_encode(['products' => $products ?: []]));
+        exit(json_encode(['products' => $products ?: []]));
     }
 
     public function ajaxProcessAssignProducts()
@@ -360,8 +372,7 @@ class AdminCustomFlagsController extends ModuleAdminController
 
         if ($idFlag <= 0 || empty($productIds)) {
             header('Content-Type: application/json');
-            $this->ajaxDie(json_encode(['success' => false, 'error' => 'Invalid parameters']));
-            return;
+            exit(json_encode(['success' => false, 'error' => 'Invalid parameters']));
         }
 
         if (!is_array($productIds)) {
@@ -385,14 +396,14 @@ class AdminCustomFlagsController extends ModuleAdminController
                     'id_custom_flag' => $idFlag,
                     'id_product' => $idProduct,
                 ]);
-                $added++;
+                ++$added;
             }
         }
 
         $assignedProducts = $this->getAssignedProductsData($idFlag);
 
         header('Content-Type: application/json');
-        $this->ajaxDie(json_encode([
+        exit(json_encode([
             'success' => true,
             'added' => $added,
             'assigned_products' => $assignedProducts,
@@ -406,8 +417,7 @@ class AdminCustomFlagsController extends ModuleAdminController
 
         if ($idFlag <= 0 || $idProduct <= 0) {
             header('Content-Type: application/json');
-            $this->ajaxDie(json_encode(['success' => false, 'error' => 'Invalid parameters']));
-            return;
+            exit(json_encode(['success' => false, 'error' => 'Invalid parameters']));
         }
 
         Db::getInstance()->delete(
@@ -416,7 +426,7 @@ class AdminCustomFlagsController extends ModuleAdminController
         );
 
         header('Content-Type: application/json');
-        $this->ajaxDie(json_encode(['success' => true]));
+        exit(json_encode(['success' => true]));
     }
 
     public function ajaxProcessAssignCategory()
@@ -426,8 +436,7 @@ class AdminCustomFlagsController extends ModuleAdminController
 
         if ($idFlag <= 0 || $idCategory <= 0) {
             header('Content-Type: application/json');
-            $this->ajaxDie(json_encode(['success' => false, 'error' => 'Invalid parameters']));
-            return;
+            exit(json_encode(['success' => false, 'error' => 'Invalid parameters']));
         }
 
         $idShop = (int) $this->context->shop->id;
@@ -452,14 +461,14 @@ class AdminCustomFlagsController extends ModuleAdminController
                     'id_custom_flag' => $idFlag,
                     'id_product' => (int) $row['id_product'],
                 ]);
-                $added++;
+                ++$added;
             }
         }
 
         $assignedProducts = $this->getAssignedProductsData($idFlag);
 
         header('Content-Type: application/json');
-        $this->ajaxDie(json_encode([
+        exit(json_encode([
             'success' => true,
             'added' => $added,
             'assigned_products' => $assignedProducts,
