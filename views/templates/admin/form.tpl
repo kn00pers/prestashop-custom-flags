@@ -4,7 +4,7 @@
     <div class="panel-heading">
         <i class="icon-flag"></i>
         {if $flag}
-            {l s='Edit Flag' mod='customflags'}: <strong>{$flag.name|escape:'htmlall':'UTF-8'}</strong>
+            {l s='Edit Flag' mod='customflags'}
         {else}
             {l s='Add New Flag' mod='customflags'}
         {/if}
@@ -19,15 +19,30 @@
                 <label class="control-label col-lg-3 required">
                     {l s='Flag Name' mod='customflags'}
                 </label>
-                <div class="col-lg-5">
-                    <input type="text"
-                           name="flag_name"
-                           id="flag_name"
-                           class="form-control"
-                           value="{if $flag}{$flag.name|escape:'htmlall':'UTF-8'}{/if}"
-                           required
-                           maxlength="128"
-                           placeholder="{l s='e.g. Bestseller, Eco, Limited Edition' mod='customflags'}" />
+                <div class="col-lg-7">
+                    <ul class="nav nav-pills cf-lang-tabs">
+                        {foreach from=$languages item=language}
+                            <li {if $language.id_lang == $defaultLang}class="active"{/if}>
+                                <a href="#flag_name_tab_{$language.id_lang|intval}" data-toggle="tab">
+                                    {$language.iso_code|escape:'htmlall':'UTF-8'}
+                                </a>
+                            </li>
+                        {/foreach}
+                    </ul>
+                    <div class="tab-content">
+                        {foreach from=$languages item=language}
+                            <div class="tab-pane {if $language.id_lang == $defaultLang}active{/if}" id="flag_name_tab_{$language.id_lang|intval}">
+                                <input type="text"
+                                       name="flag_name_{$language.id_lang|intval}"
+                                       id="flag_name_{$language.id_lang|intval}"
+                                       class="form-control cf-flag-name-input"
+                                       value="{if isset($flag_langs[$language.id_lang])}{$flag_langs[$language.id_lang]|escape:'htmlall':'UTF-8'}{/if}"
+                                       {if $language.id_lang == $defaultLang}required{/if}
+                                       maxlength="128"
+                                       placeholder="{l s='e.g. Bestseller, Eco, Limited Edition' mod='customflags'}" />
+                            </div>
+                        {/foreach}
+                    </div>
                 </div>
             </div>
 
@@ -118,7 +133,7 @@
                             text-transform: uppercase;
                             display: inline-block;
                         ">
-                            {if $flag}{$flag.name|escape:'htmlall':'UTF-8'}{else}{l s='Flag Name' mod='customflags'}{/if}
+                            {if isset($flag_langs[$defaultLang])}{$flag_langs[$defaultLang]|escape:'htmlall':'UTF-8'}{else}{l s='Flag Name' mod='customflags'}{/if}
                         </span>
                     </div>
                 </div>
@@ -139,15 +154,23 @@
 
 <script type="text/javascript">
 (function() {
-    var $name = $('#flag_name');
+    var defaultLangId = {$defaultLang|intval};
+    var $defaultNameInput = $('#flag_name_' + defaultLangId);
+    var $allNameInputs = $('.cf-flag-name-input');
     var $bg = $('#bg_color');
     var $txt = $('#text_color');
     var $badge = $('#flag-preview-badge');
     var $bgHex = $('#bg_color_hex');
     var $txtHex = $('#text_color_hex');
 
+    function getActiveNameInput() {
+        var $visible = $allNameInputs.filter(':visible');
+        return $visible.length ? $visible : $defaultNameInput;
+    }
+
     function updatePreview() {
-        var name = $name.val() || 'Flag Name';
+        var $active = getActiveNameInput();
+        var name = $active.val() || $defaultNameInput.val() || 'Flag Name';
         var bg = $bg.val() || '#FF5722';
         var txt = $txt.val() || '#FFFFFF';
         $badge.text(name);
@@ -157,9 +180,13 @@
         $txtHex.text(txt);
     }
 
-    $name.on('input keyup change', updatePreview);
+    $allNameInputs.on('input keyup change', updatePreview);
     $bg.on('input change', updatePreview);
     $txt.on('input change', updatePreview);
+
+    $('a[data-toggle="tab"]').on('shown.bs.tab', function() {
+        setTimeout(updatePreview, 50);
+    });
 })();
 </script>
 

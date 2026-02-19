@@ -44,8 +44,15 @@ class AdminCustomFlagsController extends ModuleAdminController
 
     private function renderFlagList()
     {
+        $idLang = (int) $this->context->language->id;
+
         $flags = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS(
-            'SELECT * FROM `' . _DB_PREFIX_ . 'custom_flag` ORDER BY `position` ASC, `name` ASC'
+            'SELECT cf.*, cfl.`name`
+             FROM `' . _DB_PREFIX_ . 'custom_flag` cf
+             LEFT JOIN `' . _DB_PREFIX_ . 'custom_flag_lang` cfl
+                ON cfl.`id_custom_flag` = cf.`id_custom_flag`
+                AND cfl.`id_lang` = ' . $idLang . '
+             ORDER BY cf.`position` ASC, cfl.`name` ASC'
         );
 
         if ($flags) {
@@ -73,12 +80,27 @@ class AdminCustomFlagsController extends ModuleAdminController
         $idFlag = (int) Tools::getValue('id_custom_flag', 0);
         $flag = null;
         $assignedProducts = [];
+        $flagLangs = [];
+
+        $languages = Language::getLanguages(true);
+        $defaultLang = (int) Configuration::get('PS_LANG_DEFAULT');
 
         if ($idFlag > 0) {
             $flag = Db::getInstance(_PS_USE_SQL_SLAVE_)->getRow(
                 'SELECT * FROM `' . _DB_PREFIX_ . 'custom_flag`
                  WHERE `id_custom_flag` = ' . $idFlag
             );
+
+            $langRows = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS(
+                'SELECT `id_lang`, `name` FROM `' . _DB_PREFIX_ . 'custom_flag_lang`
+                 WHERE `id_custom_flag` = ' . $idFlag
+            );
+
+            if ($langRows) {
+                foreach ($langRows as $lr) {
+                    $flagLangs[(int) $lr['id_lang']] = $lr['name'];
+                }
+            }
 
             $assignedProducts = Db::getInstance(_PS_USE_SQL_SLAVE_)->executeS(
                 'SELECT p.`id_product`, pl.`name`, p.`reference`, i.`id_image`
@@ -115,6 +137,9 @@ class AdminCustomFlagsController extends ModuleAdminController
 
         $this->context->smarty->assign([
             'flag' => $flag,
+            'flag_langs' => $flagLangs,
+            'languages' => $languages,
+            'defaultLang' => $defaultLang,
             'assigned_products' => $assignedProducts ?: [],
             'id_custom_flag' => $idFlag,
             'ajax_url' => $this->context->link->getAdminLink('AdminCustomFlags'),
@@ -148,14 +173,17 @@ class AdminCustomFlagsController extends ModuleAdminController
     private function processSaveFlag()
     {
         $idFlag = (int) Tools::getValue('id_custom_flag', 0);
-        $name = pSQL(Tools::getValue('flag_name', ''));
         $bgColor = pSQL(Tools::getValue('bg_color', '#FF5722'));
         $textColor = pSQL(Tools::getValue('text_color', '#FFFFFF'));
         $position = (int) Tools::getValue('position', 0);
         $active = (int) Tools::getValue('active', 1);
 
-        if (empty($name)) {
-            $this->errors[] = $this->l('Flag name is required.');
+        $languages = Language::getLanguages(true);
+        $defaultLang = (int) Configuration::get('PS_LANG_DEFAULT');
+
+        $defaultName = trim(Tools::getValue('flag_name_' . $defaultLang, ''));
+        if (empty($defaultName)) {
+            $this->errors[] = $this->l('Flag name is required for the default language.');
             return;
         }
 
@@ -163,7 +191,6 @@ class AdminCustomFlagsController extends ModuleAdminController
 
         if ($idFlag > 0) {
             $result = Db::getInstance()->update('custom_flag', [
-                'name' => $name,
                 'bg_color' => $bgColor,
                 'text_color' => $textColor,
                 'position' => $position,
@@ -172,12 +199,12 @@ class AdminCustomFlagsController extends ModuleAdminController
             ], 'id_custom_flag = ' . $idFlag);
 
             if ($result) {
+                $this->saveFlagLangs($idFlag, $languages, $defaultName);
                 $this->confirmations[] = $this->l('Flag updated successfully.');
                 Tools::redirectAdmin($this->context->link->getAdminLink('AdminCustomFlags') . '&action=editFlag&id_custom_flag=' . $idFlag . '&conf=4');
             }
         } else {
             $result = Db::getInstance()->insert('custom_flag', [
-                'name' => $name,
                 'bg_color' => $bgColor,
                 'text_color' => $textColor,
                 'position' => $position,
@@ -188,9 +215,31 @@ class AdminCustomFlagsController extends ModuleAdminController
 
             if ($result) {
                 $newId = (int) Db::getInstance()->Insert_ID();
+                $this->saveFlagLangs($newId, $languages, $defaultName);
                 $this->confirmations[] = $this->l('Flag created successfully.');
                 Tools::redirectAdmin($this->context->link->getAdminLink('AdminCustomFlags') . '&action=editFlag&id_custom_flag=' . $newId . '&conf=3');
             }
+        }
+    }
+
+    private function saveFlagLangs($idFlag, $languages, $defaultName)
+    {
+        $db = Db::getInstance();
+
+
+        $db->delete('custom_flag_lang', 'id_custom_flag = ' . (int) $idFlag);
+
+        foreach ($languages as $lang) {
+            $name = trim(Tools::getValue('flag_name_' . (int) $lang['id_lang'], ''));
+            if (empty($name)) {
+                $name = $defaultName;
+            }
+
+            $db->insert('custom_flag_lang', [
+                'id_custom_flag' => (int) $idFlag,
+                'id_lang' => (int) $lang['id_lang'],
+                'name' => pSQL($name),
+            ]);
         }
     }
 
@@ -200,6 +249,7 @@ class AdminCustomFlagsController extends ModuleAdminController
 
         if ($idFlag > 0) {
             Db::getInstance()->delete('custom_flag_product', 'id_custom_flag = ' . $idFlag);
+            Db::getInstance()->delete('custom_flag_lang', 'id_custom_flag = ' . $idFlag);
             Db::getInstance()->delete('custom_flag', 'id_custom_flag = ' . $idFlag);
             $this->confirmations[] = $this->l('Flag deleted successfully.');
             Tools::redirectAdmin($this->context->link->getAdminLink('AdminCustomFlags') . '&conf=1');
