@@ -23,7 +23,7 @@ class CustomFlags extends Module
     {
         $this->name = 'customflags';
         $this->tab = 'front_office_features';
-        $this->version = '1.2.1';
+        $this->version = '1.2.3';
         $this->author = 'Astrodesign.pl';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = ['min' => '8.0.0', 'max' => _PS_VERSION_];
